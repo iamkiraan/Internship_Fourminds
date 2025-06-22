@@ -71,17 +71,20 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Settings'),
+        title: Text('Settings', style: TextStyle(color: _isDarkTheme ? Colors.white : Colors.black87)),
+        backgroundColor: _isDarkTheme ? Colors.grey[850] : Colors.white,
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(labelText: 'Change Name'),
+              decoration: InputDecoration(labelText: 'Change Name', labelStyle: TextStyle(color: _isDarkTheme ? Colors.white70 : Colors.black87)),
+              style: TextStyle(color: _isDarkTheme ? Colors.white : Colors.black87),
             ),
             SwitchListTile(
-              title: Text('Dark Theme'),
+              title: Text('Dark Theme', style: TextStyle(color: _isDarkTheme ? Colors.white : Colors.black87)),
               value: _isDarkTheme,
+              activeColor: Colors.blueGrey[700],
               onChanged: (value) async {
                 setState(() => _isDarkTheme = value);
                 final prefs = await SharedPreferences.getInstance();
@@ -99,11 +102,11 @@ class _HomeScreenState extends State<HomeScreen> {
               await prefs.setString('username', _nameController.text);
               Navigator.pop(context);
             },
-            child: Text('Save'),
+            child: Text('Save', style: TextStyle(color: _isDarkTheme ? Colors.white : Colors.black87)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(color: _isDarkTheme ? Colors.white : Colors.black87)),
           ),
         ],
       ),
@@ -118,83 +121,94 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return MaterialApp(
       theme: _isDarkTheme ? ThemeData.dark() : ThemeData.light(),
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('ThingsToDo - $_username', style: TextStyle(color: Colors.white)),
-          backgroundColor: Colors.blue[700],
-          bottom: PreferredSize(
-            preferredSize: Size.fromHeight(60),
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildNavButton('DAILY', 0),
-                  _buildNavButton('WEEKLY', 1),
-                  _buildNavButton('MONTHLY', 2),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.settings, color: Colors.white),
-              onPressed: _showSettings,
-            ),
-          ],
-        ),
-        body: Padding(
-          padding: EdgeInsets.all(20),
-          child: Card(
-            elevation: 6,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-            child: Padding(
-              padding: EdgeInsets.all(15),
-              child: Column(
-                children: [
-                  Text(periods[_selectedIndex].toUpperCase(), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue[700])),
-                  Text('Completed $currentCompleted/${currentTasks.length}', style: TextStyle(color: Colors.grey[600])),
-                  SizedBox(height: 10),
-                  Expanded(
-                    child: currentTasks.isEmpty
-                        ? EmptyScreen()
-                        : ListView.builder(
-                      itemCount: currentTasks.length,
-                      itemBuilder: (context, index) {
-                        return TaskTile(
-                          taskText: currentTasks[index],
-                          isCompleted: currentTasks[index].contains(' (Completed)'),
-                          onTap: () => _toggleTaskCompletion(periods[_selectedIndex], index),
-                        );
-                      },
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Row(
+      home: Builder(
+        builder: (context) => Theme(
+          data: _isDarkTheme ? Theme.of(context).copyWith(
+            textTheme: Theme.of(context).textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white),
+          ) : Theme.of(context),
+          child: Scaffold(
+            appBar: AppBar(
+              title: Text('ThingsToDo - $_username', style: TextStyle(color: Colors.white)),
+              backgroundColor: Colors.blue[700],
+              bottom: PreferredSize(
+                preferredSize: Size.fromHeight(60),
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
+                      _buildNavButton('DAILY', 0),
+                      _buildNavButton('WEEKLY', 1),
+                      _buildNavButton('MONTHLY', 2),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.settings, color: Colors.white),
+                  onPressed: _showSettings,
+                ),
+              ],
+            ),
+            body: Padding(
+              padding: EdgeInsets.all(20),
+              child: Card(
+                elevation: 6,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                color: _isDarkTheme ? Colors.grey[850] : Colors.white,
+                child: Padding(
+                  padding: EdgeInsets.all(15),
+                  child: Column(
+                    children: [
+                      Text(periods[_selectedIndex].toUpperCase(), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _isDarkTheme ? Colors.white : Colors.blue[700])),
+                      Text('Completed $currentCompleted/${currentTasks.length}', style: TextStyle(color: _isDarkTheme ? Colors.white70 : Colors.grey[600])),
+                      SizedBox(height: 10),
                       Expanded(
-                        child: TextField(
-                          controller: _taskController,
-                          decoration: InputDecoration(
-                            hintText: 'Add new task',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                            filled: true,
-                            fillColor: Colors.white70,
-                          ),
+                        child: currentTasks.isEmpty
+                            ? EmptyScreen(isDarkTheme: _isDarkTheme)
+                            : ListView.builder(
+                          itemCount: currentTasks.length,
+                          itemBuilder: (context, index) {
+                            return TaskTile(
+                              taskText: currentTasks[index],
+                              isCompleted: currentTasks[index].contains(' (Completed)'),
+                              onTap: () => _toggleTaskCompletion(periods[_selectedIndex], index),
+                              isDarkTheme: _isDarkTheme,
+                            );
+                          },
                         ),
                       ),
-                      SizedBox(width: 10),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[700], // Replaced 'primary' with 'backgroundColor'
-                          shape: CircleBorder(),
-                        ),
-                        onPressed: () => _addTask(periods[_selectedIndex]),
-                        child: Icon(Icons.add, color: Colors.white),
+                      SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _taskController,
+                              decoration: InputDecoration(
+                                hintText: 'Add new task',
+                                hintStyle: TextStyle(color: _isDarkTheme ? Colors.white70 : Colors.grey),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                filled: true,
+                                fillColor: _isDarkTheme ? Colors.grey[800] : Colors.white70,
+                              ),
+                              style: TextStyle(color: _isDarkTheme ? Colors.white : Colors.black87),
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _isDarkTheme ? Colors.blueGrey[700] : Colors.blue[700],
+                              shape: CircleBorder(),
+                            ),
+                            onPressed: () => _addTask(periods[_selectedIndex]),
+                            child: Icon(Icons.add, color: Colors.white),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -206,11 +220,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildNavButton(String title, int index) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: _selectedIndex == index ? Colors.blue[900] : Colors.blue[700], // Replaced 'primary' with 'backgroundColor'
+        backgroundColor: _selectedIndex == index ? (_isDarkTheme ? Colors.blueGrey[900] : Colors.blue[900]) : (_isDarkTheme ? Colors.blueGrey[700] : Colors.blue[700]),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
       onPressed: () => setState(() => _selectedIndex = index),
-      child: Text(title),
+      child: Text(title, style: TextStyle(color: Colors.white)),
     );
   }
 }
