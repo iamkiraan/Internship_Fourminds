@@ -45,20 +45,63 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // Dynamic color based on weather condition
+  Color getWeatherColor(String? description) {
+    if (description == null) return Colors.blue.shade900;
+    description = description.toLowerCase();
+    if (description.contains('clear') || description.contains('sunny')) {
+      return Colors.orange.shade700;
+    } else if (description.contains('rain') || description.contains('shower')) {
+      return Colors.blue.shade700;
+    } else if (description.contains('cloud')) {
+      return Colors.grey.shade600;
+    } else if (description.contains('thunder')) {
+      return Colors.purple.shade700;
+    }
+    return Colors.blue.shade900;
+  }
+
   @override
   Widget build(BuildContext context) {
     final wp = Provider.of<WeatherProvider>(context);
+    final primaryColor = getWeatherColor(wp.current?.weatherDescription);
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Weather Forecast',
+          style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh, color: Colors.white),
+            onPressed: () async {
+              setState(() {
+                errorMessage = null;
+              });
+              try {
+                await Provider.of<WeatherProvider>(context, listen: false).fetchByLocation();
+              } catch (e) {
+                setState(() {
+                  errorMessage = 'Failed to refresh weather data. Try again.';
+                });
+              }
+            },
+          ),
+        ],
+      ),
+      extendBodyBehindAppBar: true,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              Colors.blue.shade900,
-              Colors.cyan.shade300,
-              Colors.purple.shade200,
+              primaryColor.withOpacity(0.8),
+              Colors.cyan.shade200,
+              Colors.purple.shade100,
             ],
           ),
         ),
@@ -123,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: Colors.blue.shade900,
+                    foregroundColor: primaryColor,
                     padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -142,70 +185,78 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           )
-              : Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Search Bar
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.95),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    controller: cityController,
-                    style: TextStyle(
-                      fontFamily: 'Roboto',
-                      color: Colors.blue.shade900,
-                      fontSize: 16,
+              : SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Search Bar
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                      border: Border.all(color: Colors.white.withOpacity(0.3)),
                     ),
-                    decoration: InputDecoration(
-                      hintText: 'Search city...',
-                      hintStyle: TextStyle(
+                    child: TextField(
+                      controller: cityController,
+                      style: TextStyle(
                         fontFamily: 'Roboto',
-                        color: Colors.blue.shade400,
+                        color: Colors.white,
+                        fontSize: 16,
                       ),
-                      prefixIcon: Icon(Icons.search, color: Colors.blue.shade900),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 15,
+                      decoration: InputDecoration(
+                        hintText: 'Search city...',
+                        hintStyle: TextStyle(
+                          fontFamily: 'Roboto',
+                          color: Colors.white70,
+                        ),
+                        prefixIcon: Icon(Icons.search, color: Colors.white70),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 15,
+                        ),
                       ),
-                    ),
-                    onSubmitted: (value) async {
-                      if (value.isNotEmpty) {
-                        try {
-                          await wp.fetchByCity(value);
-                          setState(() {
-                            errorMessage = null;
-                          });
-                        } catch (e) {
-                          setState(() {
-                            errorMessage = 'Invalid city name or network error.';
-                          });
+                      onSubmitted: (value) async {
+                        if (value.isNotEmpty) {
+                          try {
+                            await wp.fetchByCity(value);
+                            setState(() {
+                              errorMessage = null;
+                            });
+                          } catch (e) {
+                            setState(() {
+                              errorMessage = 'Invalid city name or network error.';
+                            });
+                          }
                         }
-                      }
-                    },
+                      },
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                // Current Weather Card
-                Card(
-                  elevation: 10,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  color: Colors.white.withOpacity(0.9),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
+                  const SizedBox(height: 16),
+                  // Current Weather Card
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                      border: Border.all(color: Colors.white.withOpacity(0.3)),
+                    ),
+                    padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
                         Text(
@@ -214,19 +265,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             fontFamily: 'Roboto',
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade900,
+                            color: Colors.white,
                           ),
                         ),
                         const SizedBox(height: 12),
                         wp.current!.weatherIcon != null
                             ? Image.network(
-                          'https://openweathermap.org/img/wn/${wp.current!.weatherIcon}@2x.png',
-                          width: 100,
-                          height: 100,
+                          'https://openweathermap.org/img/wn/${wp.current!.weatherIcon}@4x.png',
+                          width: 120,
+                          height: 120,
                           errorBuilder: (context, error, stackTrace) =>
-                              Icon(Icons.cloud_off, size: 100, color: Colors.grey.shade400),
+                              Icon(Icons.cloud_off, size: 120, color: Colors.white70),
                         )
-                            : Icon(Icons.cloud_off, size: 100, color: Colors.grey.shade400),
+                            : Icon(Icons.cloud_off, size: 120, color: Colors.white70),
                         const SizedBox(height: 12),
                         Text(
                           '${wp.current!.temperature?.celsius?.toStringAsFixed(1) ?? '--'} °C',
@@ -234,7 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             fontFamily: 'Roboto',
                             fontSize: 48,
                             fontWeight: FontWeight.w300,
-                            color: Colors.blue.shade900,
+                            color: Colors.white,
                           ),
                         ),
                         Text(
@@ -242,112 +293,120 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextStyle(
                             fontFamily: 'Roboto',
                             fontSize: 18,
-                            color: Colors.blue.shade700,
+                            color: Colors.white70,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(height: 16),
                         // Additional Weather Details
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        Wrap(
+                          spacing: 16,
+                          runSpacing: 16,
+                          alignment: WrapAlignment.center,
                           children: [
                             _WeatherDetail(
                               icon: Icons.water_drop,
                               label: 'Humidity',
                               value: '${wp.current!.humidity?.toStringAsFixed(0) ?? '--'}%',
                               tooltip: 'Percentage of moisture in the air',
+                              color: primaryColor,
                             ),
                             _WeatherDetail(
                               icon: Icons.air,
                               label: 'Wind',
                               value: '${wp.current!.windSpeed?.toStringAsFixed(1) ?? '--'} m/s',
                               tooltip: 'Wind speed in meters per second',
+                              color: primaryColor,
                             ),
                             _WeatherDetail(
                               icon: Icons.bolt,
                               label: 'Thunderstorm',
                               value: getThunderstormProbability(wp.current!.weatherConditionCode),
                               tooltip: 'Likelihood of thunderstorm activity',
+                              color: primaryColor,
                             ),
                           ],
                         ),
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                // Forecast Title
-                Text(
-                  '7-Day Forecast',
-                  style: TextStyle(
-                    fontFamily: 'Roboto',
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  const SizedBox(height: 16),
+                  // Forecast Title
+                  Text(
+                    '7-Day Forecast',
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                // Forecast List
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: wp.forecast?.length ?? 0,
-                    itemBuilder: (context, index) {
-                      final weather = wp.forecast![index];
-                      return Card(
-                        elevation: 6,
-                        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        color: Colors.white.withOpacity(0.9),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(12),
-                          leading: weather.weatherIcon != null
-                              ? Image.network(
-                            'https://openweathermap.org/img/wn/${weather.weatherIcon}@2x.png',
-                            width: 60,
-                            height: 60,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Icon(Icons.cloud_off, size: 60, color: Colors.grey.shade400),
-                          )
-                              : Icon(Icons.cloud_off, size: 60, color: Colors.grey.shade400),
-                          title: Text(
-                            DateFormat('EEEE, MMM d').format(weather.date!.toLocal()),
-                            style: TextStyle(
-                              fontFamily: 'Roboto',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue.shade900,
+                  const SizedBox(height: 12),
+                  // Forecast List
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.4, // Limit height to prevent overflow
+                    child: ListView.builder(
+                      itemCount: wp.forecast?.length ?? 0,
+                      itemBuilder: (context, index) {
+                        final weather = wp.forecast![index];
+                        return Card(
+                          elevation: 4,
+                          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          color: index % 2 == 0
+                              ? Colors.white.withOpacity(0.2)
+                              : Colors.white.withOpacity(0.3),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(12),
+                            leading: weather.weatherIcon != null
+                                ? Image.network(
+                              'https://openweathermap.org/img/wn/${weather.weatherIcon}@2x.png',
+                              width: 50,
+                              height: 50,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(Icons.cloud_off, size: 50, color: Colors.white70),
+                            )
+                                : Icon(Icons.cloud_off, size: 50, color: Colors.white70),
+                            title: Text(
+                              DateFormat('EEEE, MMM d').format(weather.date!.toLocal()),
+                              style: TextStyle(
+                                fontFamily: 'Roboto',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${weather.temperature?.celsius?.toStringAsFixed(1) ?? '--'} °C • ${weather.weatherDescription?.toUpperCase() ?? 'N/A'}',
+                                  style: TextStyle(
+                                    fontFamily: 'Roboto',
+                                    fontSize: 14,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Humidity: ${weather.humidity?.toStringAsFixed(0) ?? '--'}% • Wind: ${weather.windSpeed?.toStringAsFixed(1) ?? '--'} m/s',
+                                  style: TextStyle(
+                                    fontFamily: 'Roboto',
+                                    fontSize: 12,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${weather.temperature?.celsius?.toStringAsFixed(1) ?? '--'} °C • ${weather.weatherDescription?.toUpperCase() ?? 'N/A'}',
-                                style: TextStyle(
-                                  fontFamily: 'Roboto',
-                                  fontSize: 14,
-                                  color: Colors.blue.shade700,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Humidity: ${weather.humidity?.toStringAsFixed(0) ?? '--'}% • Wind: ${weather.windSpeed?.toStringAsFixed(1) ?? '--'} m/s',
-                                style: TextStyle(
-                                  fontFamily: 'Roboto',
-                                  fontSize: 12,
-                                  color: Colors.blue.shade600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -362,12 +421,14 @@ class _WeatherDetail extends StatefulWidget {
   final String label;
   final String value;
   final String tooltip;
+  final Color color;
 
   const _WeatherDetail({
     required this.icon,
     required this.label,
     required this.value,
     required this.tooltip,
+    required this.color,
   });
 
   @override
@@ -376,16 +437,18 @@ class _WeatherDetail extends StatefulWidget {
 
 class _WeatherDetailState extends State<_WeatherDetail> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _animation;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
     _controller.forward();
   }
 
@@ -399,18 +462,15 @@ class _WeatherDetailState extends State<_WeatherDetail> with SingleTickerProvide
   Widget build(BuildContext context) {
     return Tooltip(
       message: widget.tooltip,
-      child: FadeTransition(
-        opacity: _animation,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
         child: Container(
-          width: 80,
-          height: 80,
+          width: 90,
+          height: 90,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [Colors.blue.shade100, Colors.white],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: Colors.white.withOpacity(0.2),
+            border: Border.all(color: Colors.white.withOpacity(0.3)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
@@ -424,16 +484,16 @@ class _WeatherDetailState extends State<_WeatherDetail> with SingleTickerProvide
             children: [
               Icon(
                 widget.icon,
-                color: Colors.blue.shade800,
-                size: 24,
+                color: widget.color,
+                size: 28,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 widget.value,
                 style: TextStyle(
                   fontFamily: 'Roboto',
                   fontSize: 14,
-                  color: Colors.blue.shade900,
+                  color: Colors.white,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -442,7 +502,7 @@ class _WeatherDetailState extends State<_WeatherDetail> with SingleTickerProvide
                 style: TextStyle(
                   fontFamily: 'Roboto',
                   fontSize: 10,
-                  color: Colors.blue.shade700,
+                  color: Colors.white70,
                 ),
                 textAlign: TextAlign.center,
               ),
